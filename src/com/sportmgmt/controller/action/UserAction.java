@@ -42,7 +42,7 @@ public class UserAction {
 	public void setPropFileUtility(PropertyFileUtility propFileUtility) {
 		this.propFileUtility = propFileUtility;
 	}
-	@RequestMapping("/register")
+	@RequestMapping(value = "register", method = RequestMethod.POST)
 	public String userLogin(ModelMap modeMap,@RequestParam Map<String,String> userMap)
 	{
 		logger.debug("Entry in register method model Map: "+modeMap);
@@ -54,7 +54,7 @@ public class UserAction {
 		{
 			modeMap.put("displayName", "name is required");
 		}
-		if(userMap.get("dobDay") == null || userMap.get("dobDay").equals(""))
+		/*if(userMap.get("dobDay") == null || userMap.get("dobDay").equals(""))
 		{
 			modeMap.put("dobError", "Date of Birth is required");
 		}
@@ -65,7 +65,7 @@ public class UserAction {
 		if(userMap.get("dobYear") == null || userMap.get("dobYear").equals(""))
 		{
 			modeMap.put("dobError", "Date of Birth is required");
-		}
+		}*/
 		if(userMap.get("logonId") == null || userMap.get("logonId").equals(""))
 		{
 			userMap.put("logonId", userMap.get("emailId"));

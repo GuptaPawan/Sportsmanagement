@@ -65,7 +65,8 @@ public class TestAction {
 	@RequestMapping("/login")
 	public String hello(ModelMap map)
 	{
-		UserManager.getCountryStateCityMap();
+		//UserManager.getCountryStateCityMap();
+		System.out.println("<----------------- Entered By User: ");
 		return "login/login";
 	}
 	
