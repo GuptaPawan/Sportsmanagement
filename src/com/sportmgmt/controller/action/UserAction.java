@@ -1,5 +1,7 @@
 package com.sportmgmt.controller.action;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sportmgmt.controller.bean.User;
 import com.sportmgmt.model.manager.UserManager;
 import com.sportmgmt.utility.common.MailUtility;
@@ -270,5 +273,129 @@ public class UserAction {
 	 logger.debug("---------- Forwardng to : "+SportConstrant.FORGOT_PASS_RESULT_PAGE);
 	 return SportConstrant.FORGOT_PASS_RESULT_PAGE;
 	}
+	@RequestMapping(value = "UpdateAction", method = RequestMethod.POST)
+	public String updateUser(ModelMap modeMap,@RequestParam Map<String,String> userMap,HttpServletRequest request)
+	{
+		logger.debug("Entry in UpdateAction method model Map: "+modeMap);
+		if(userMap.get("userId") == null || userMap.get("userId").equals(""))
+		{
+			modeMap.put("userIdError", "UserId is required");
+		}
+		if(userMap.get(SportConstrant.ACTION) != null && userMap.get(SportConstrant.ACTION).equals(SportConstrant.CHANGE_PASS))
+		{
+			if(userMap.get("newPassword") == null || userMap.get("newPassword").equals(""))
+			modeMap.put("newPasswordError", "New Password is required");
+		}
+		logger.debug("------------ Error Map: "+modeMap);
+		if(modeMap.isEmpty())
+		{
+			boolean isUpdated = UserManager.saveUser(userMap);
+			modeMap.put("isUpdated",isUpdated);
+			if(isUpdated)
+			{
+				modeMap.put("message","Your profile is updated");
+				logger.debug("----------- start to send mail------");
+				if(userMap.get(SportConstrant.ACTION) != null && userMap.get(SportConstrant.ACTION).equals(SportConstrant.CHANGE_PASS))
+				{
+						String emailId = "";
+						String displayName = "";
+						if(userMap.get("emailId") != null && !userMap.get("emailId").equals(""))
+						{
+							emailId = userMap.get("emailId");
+						}
+						else
+						{
+							HttpSession session = request.getSession();
+							if(session.getAttribute("user") !=null && ((User)session.getAttribute("user")).getEmailId() != null && !((User)session.getAttribute("user")).getEmailId().equals(""))
+							{
+								emailId = ((User)session.getAttribute("user")).getEmailId();
+							}
+							if(session.getAttribute("user") !=null && ((User)session.getAttribute("user")).getDisplayName() != null && !((User)session.getAttribute("user")).getDisplayName().equals(""))
+							{
+								displayName = ((User)session.getAttribute("user")).getDisplayName();
+							}
+						}
+						if(!emailId.equals(""))
+						{
+							try
+							{
+								Map<String,Object> mailMap = new java.util.HashMap<String,Object>();
+								//mailMap.put(SportConstrant.FROM, propFileUtility.getEnvProperty().getString(SportConstrant.FROM));
+								mailMap.put(SportConstrant.TO,emailId);
+								mailMap.put("displayName", displayName);
+								mailMap.put(SportConstrant.VELOCIYY_FILE_LOC,propFileUtility.getEnvProperty().getString(SportConstrant.USER_PASS_CHANGE_EMAIL_LOC));
+								mailMap.put(SportConstrant.SUBJECT, propFileUtility.getEnvProperty().getString(SportConstrant.USER_PASS_CHANGE_EMAIL_SUB));
+								mailUtility.sendHtmlMail(mailMap);
+								logger.debug("----------- Mail sent successfylly to mail Id: "+emailId);
+							}
+							catch (Exception ex)
+							{
+								logger.error("----------- Excepton in Sending Mail ----------"+ex);
+							}
+						}
+						else
+						{
+							logger.error("-------Do not found email to send the mail ----------: "+emailId);
+						}
+						
+				}
+				
+			}
+			else
+			{
+				if(userMap.get(SportConstrant.ACTION) != null && userMap.get(SportConstrant.ACTION).equals(SportConstrant.CHANGE_PASS))
+				{
+					modeMap.put("message","Password Chagne Request failed due to "+UserManager.getErrorMessage());
+				}
+				else
+				{
+					modeMap.put("message","Your Registration is failed due to "+UserManager.getErrorMessage());
+				}
+			}
+		}
+		else
+		{
+			modeMap.put("message","Your Registration is failed due to incomplete info");
+		}
+		modeMap.put(SportConstrant.ACTION,userMap.get(SportConstrant.ACTION));
+		//return "redirect:/login/loginSuccess.jsp";
+		return SportConstrant.USER_UPDATE_RESULT_PAGE;
 
+	}
+	@RequestMapping(value = "UserUpdateView", method = RequestMethod.GET)
+	public  String updateView(ModelMap modeMap,HttpServletRequest request)
+	{
+		 logger.debug("---------- Entry in --- UpdateView");
+		 HashMap<String,HashMap<String,ArrayList<String>>> countryStateCityMap = UserManager.getCountryStateCityMap();
+		 logger.debug("-------- UpdateView : countryStateCityMap: "+countryStateCityMap);
+		 modeMap.put("countryStateCityMap", countryStateCityMap);
+		 String countryStateCityJson = "{}";
+		 if(countryStateCityMap != null)
+		 {
+			 ObjectMapper mapperObj = new ObjectMapper();
+			 try
+			 {
+				 countryStateCityJson = mapperObj.writeValueAsString(countryStateCityMap);
+				 logger.debug("-------- UpdateView : countryStateCityJson: "+countryStateCityJson);
+				 modeMap.put("countryStateCityJson", countryStateCityJson);
+			 }
+			 catch(Exception ex)
+			 {
+				 logger.error("---------- Entry in parsing map to json: "+ex);
+			 }
+		 }
+		 return SportConstrant.USER_UPDATE_PAGE;
+	}
+	@RequestMapping(value = "ChangePasswordView", method = RequestMethod.GET)
+	public  String changePasswordView(ModelMap modeMap,HttpServletRequest request)
+	{
+		 logger.debug("---------- Entry in --- ChangePasswordView");
+		 return SportConstrant.CHANGE_PASSWORD_PAGE;
+	}
+	@RequestMapping(value = "ForgotPasswordView", method = RequestMethod.GET)
+	public  String forgotPasswordView(ModelMap modeMap,HttpServletRequest request)
+	{
+		 logger.debug("---------- Entry in --- ChangePasswordView");
+		 return SportConstrant.FORGOT_PASSWORD_PAGE;
+	}
 }
