@@ -24,9 +24,9 @@ public class SportConstrant {
 	public final static String LEAGE_HOME_PAGE = "leagueHome";
 	public final static String LEAGE_LOGIN_PAGE = "leagueLogin";
 	public final static String FORGOT_PASSWORD_PAGE = "forgotPassword";
-	public final static String USER_VERIFY_PAGE = "user/verifyResult";
+	public final static String USER_VERIFY_PAGE = "verifyResult";
 	public final static String USER_UPDATE_RESULT_PAGE = "userUpdateResult";
-	public final static String USER_REG_RESULT_PAGE = "user/registerResult";
+	public final static String USER_REG_RESULT_PAGE = "registerResult";
 	public final static String FORGOT_PASS_RESULT_PAGE = "forgotPasswordResult";
 	public final static String ACTION = "action";
 	public final static String CHANGE_PASS = "ChangePassword";
