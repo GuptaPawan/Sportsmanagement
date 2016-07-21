@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ravij.crypto.EncodeDecoder;
 import com.sportmgmt.controller.bean.User;
 import com.sportmgmt.model.manager.UserManager;
 import com.sportmgmt.utility.common.MailUtility;
@@ -49,33 +50,46 @@ public class UserAction {
 	public String userLogin(ModelMap modeMap,@RequestParam Map<String,String> userMap)
 	{
 		logger.debug("Entry in register method model Map: "+modeMap);
-		if(userMap.get("emailId") == null || userMap.get("emailId").equals(""))
+		if(userMap.get("emailId") == null || userMap.get("emailId").equals(SportConstrant.NULL))
 		{
 			modeMap.put("emailIdError", "emailId is required");
 		}
-		if(userMap.get("displayName") == null || userMap.get("displayName").equals(""))
+		if(userMap.get("displayName") == null || userMap.get("displayName").equals(SportConstrant.NULL))
 		{
 			modeMap.put("displayName", "name is required");
 		}
-		/*if(userMap.get("dobDay") == null || userMap.get("dobDay").equals(""))
+		/*if(userMap.get("dobDay") == null || userMap.get("dobDay").equals(SportConstrant.NULL))
 		{
 			modeMap.put("dobError", "Date of Birth is required");
 		}
-		if(userMap.get("dobMonth") == null || userMap.get("dobMonth").equals(""))
+		if(userMap.get("dobMonth") == null || userMap.get("dobMonth").equals(SportConstrant.NULL))
 		{
 			modeMap.put("dobError", "Date of Birth is required");
 		}
-		if(userMap.get("dobYear") == null || userMap.get("dobYear").equals(""))
+		if(userMap.get("dobYear") == null || userMap.get("dobYear").equals(SportConstrant.NULL))
 		{
 			modeMap.put("dobError", "Date of Birth is required");
 		}*/
-		if(userMap.get("logonId") == null || userMap.get("logonId").equals(""))
+		if(userMap.get("logonId") == null || userMap.get("logonId").equals(SportConstrant.NULL))
 		{
 			userMap.put("logonId", userMap.get("emailId"));
 		}
-		if(userMap.get("logonPassword") == null || userMap.get("logonPassword").equals(""))
+		if(userMap.get("logonPassword") == null || userMap.get("logonPassword").equals(SportConstrant.NULL))
 		{
 			modeMap.put("logonPasswordError", "User Password is required");
+		}
+		else
+		{
+			logger.debug("--------- password: "+userMap.get("logonPassword"));
+			try
+			{
+				userMap.put("logonPassword", EncodeDecoder.encrypt(userMap.get("logonPassword")));
+				logger.debug("--------- password: After Encoding:  "+userMap.get("logonPassword"));
+			}
+			catch(Exception ex)
+			{
+				logger.error("--------- Error in encoding password: "+ex);
+			}
 		}
 		logger.debug("------------ Error Map: "+modeMap);
 		if(modeMap.isEmpty())
@@ -134,6 +148,19 @@ public class UserAction {
 	 {
 		 resultMap.put("errorCode", ErrorConstrant.EMPTY_PASS);
 		 resultMap.put("errorMessage", "Password Can't be black");
+	 }
+	 else
+	 {
+		 logger.debug("--------- password: "+logonPassword);
+			try
+			{
+				logonPassword = EncodeDecoder.encrypt(logonPassword);
+				logger.debug("--------- password: After Encoding:  "+logonPassword);
+			}
+			catch(Exception ex)
+			{
+				logger.error("--------- Error in encoding password: "+ex);
+			}
 	 }
 	 if(resultMap.size() == 0)
 	 {
@@ -238,8 +265,17 @@ public class UserAction {
 		 logger.debug("---------- Calling Hibernate getPasswordByEmail Method: ");
 		 String password = UserManager.getPasswordByEmail(emailId);
 		 logger.debug("---------- Fetche User Passoword: "+password);
-		 if(password != null && !password.equals(""))
+		 if(password != null && !password.equals(SportConstrant.NULL))
 		 {
+				try
+				{
+					password = EncodeDecoder.decrypt(password);
+					logger.debug("--------- password: After Decoding:  "+password);
+				}
+				catch(Exception ex)
+				{
+					logger.error("--------- Error in encoding password: "+ex);
+				}
 			 logger.debug("---------- Starting to send mail");
 			 try
 				{
@@ -277,14 +313,27 @@ public class UserAction {
 	public String updateUser(ModelMap modeMap,@RequestParam Map<String,String> userMap,HttpServletRequest request)
 	{
 		logger.debug("Entry in UpdateAction method model Map: "+modeMap);
-		if(userMap.get("userId") == null || userMap.get("userId").equals(""))
+		if(userMap.get("userId") == null || userMap.get("userId").equals(SportConstrant.NULL))
 		{
 			modeMap.put("userIdError", "UserId is required");
 		}
 		if(userMap.get(SportConstrant.ACTION) != null && userMap.get(SportConstrant.ACTION).equals(SportConstrant.CHANGE_PASS))
 		{
-			if(userMap.get("newPassword") == null || userMap.get("newPassword").equals(""))
+			if(userMap.get("logonPassword") == null || userMap.get("logonPassword").equals(SportConstrant.NULL))
 			modeMap.put("newPasswordError", "New Password is required");
+			else
+			{
+				logger.debug("--------- password: "+userMap.get("logonPassword"));
+				try
+				{
+					userMap.put("logonPassword", EncodeDecoder.encrypt(userMap.get("logonPassword")));
+					logger.debug("--------- password: After Encoding:  "+userMap.get("logonPassword"));
+				}
+				catch(Exception ex)
+				{
+					logger.error("--------- Error in encoding password: "+ex);
+				}
+			}
 		}
 		logger.debug("------------ Error Map: "+modeMap);
 		if(modeMap.isEmpty())
@@ -297,25 +346,25 @@ public class UserAction {
 				logger.debug("----------- start to send mail------");
 				if(userMap.get(SportConstrant.ACTION) != null && userMap.get(SportConstrant.ACTION).equals(SportConstrant.CHANGE_PASS))
 				{
-						String emailId = "";
-						String displayName = "";
-						if(userMap.get("emailId") != null && !userMap.get("emailId").equals(""))
+						String emailId = SportConstrant.NULL;
+						String displayName = SportConstrant.NULL;
+						if(userMap.get("emailId") != null && !userMap.get("emailId").equals(SportConstrant.NULL))
 						{
 							emailId = userMap.get("emailId");
 						}
 						else
 						{
 							HttpSession session = request.getSession();
-							if(session.getAttribute("user") !=null && ((User)session.getAttribute("user")).getEmailId() != null && !((User)session.getAttribute("user")).getEmailId().equals(""))
+							if(session.getAttribute("user") !=null && ((User)session.getAttribute("user")).getEmailId() != null && !((User)session.getAttribute("user")).getEmailId().equals(SportConstrant.NULL))
 							{
 								emailId = ((User)session.getAttribute("user")).getEmailId();
 							}
-							if(session.getAttribute("user") !=null && ((User)session.getAttribute("user")).getDisplayName() != null && !((User)session.getAttribute("user")).getDisplayName().equals(""))
+							if(session.getAttribute("user") !=null && ((User)session.getAttribute("user")).getDisplayName() != null && !((User)session.getAttribute("user")).getDisplayName().equals(SportConstrant.NULL))
 							{
 								displayName = ((User)session.getAttribute("user")).getDisplayName();
 							}
 						}
-						if(!emailId.equals(""))
+						if(!emailId.equals(SportConstrant.NULL))
 						{
 							try
 							{
